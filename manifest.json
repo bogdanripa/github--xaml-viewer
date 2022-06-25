@@ -8,7 +8,7 @@
       "matches": ["https://github.com/*"],
       "run_at": "document_end",
       "css": ["myStyles.css"],
-      "js": ["xmlFunctions.js", "contentScript.js"]
+      "js": ["xmlFunctions.js", "uia.js", "system.js", "office.js", "contentScript.js"]
     }
   ]
 }
