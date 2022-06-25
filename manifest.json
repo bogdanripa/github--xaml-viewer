@@ -1,0 +1,14 @@
+{
+  "name": "UiPath XAML support in GitHub",
+  "version": "1.0",
+  "description": "Adds support for viewing and diff'ing XAML files in GitHub",
+  "manifest_version": 3,
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "run_at": "document_end",
+      "css": ["myStyles.css"],
+      "js": ["xmlFunctions.js", "contentScript.js"]
+    }
+  ]
+}
