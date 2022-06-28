@@ -1,22 +1,30 @@
 if (!window.mappings) window.mappings = {};
 
+function uip_Throw(node) {
+    var ex = node.getAttribute2("Exception");
+    if (!ex) {
+        ex = node.textContent;
+    }
+    return "Throw Exception " + parseVariables(ex);
+}
+
 window.mappings = {
     ... window.mappings,
     ... {
-        'Variable': (node) => {return "var " + parseVariables(node.getAttribute("x:TypeArguments")) + " " + parseVariables(node.getAttribute("Name")) + (node.getAttribute("Default")?(" = " + parseVariables(node.getAttribute("Default"))):"")},
-        'Assign': (node) => {return "Assign " + parseVariables(node.getChild("Assign.Value").getChild("InArgument").innerHTML) + " to " + parseVariables(node.getChild("Assign.To").getChild("OutArgument").innerHTML)},
-        'ui:AssignOperation': (node) => {return "Assign " + parseVariables(node.getChild("ui:AssignOperation.Value").innerHTML) + " to " + parseVariables(node.getChild("ui:AssignOperation.To").innerHTML)},
-        'If': (node) => {return "If " + parseVariables(node.getAttribute("Condition"))},
-        'WriteLine': (node) => {return "Write Line (" + parseVariables(node.getAttribute("Text")) + ")"},
-        'Switch': (node) => {return "Switch (" + parseVariables(node.getAttribute("Expression")) + ")"},
-        'AddToCollection': (node) => {return "Add " + parseVariables(node.getAttribute("Item")) + " to " + parseVariables(node.getAttribute("Collection")) + " collection"},
+        'Variable': (node) => {return "var " + parseVariables(node.getAttribute2("x:TypeArguments")) + " " + parseVariables(node.getAttribute2("Name")) + (node.getAttribute2("Default")?(" = " + parseVariables(node.getAttribute2("Default"))):"")},
+        'Assign': (node) => {return parseVariables(node.getChild("Assign.To").getChild("OutArgument").textContent) + " = " + parseVariables(node.getChild("Assign.Value").getChild("InArgument").textContent)},
+        'ui:AssignOperation': (node) => {return parseVariables(node.getChild("ui:AssignOperation.To").textContent) + " = " + parseVariables(node.getChild("ui:AssignOperation.Value").textContent);},
+        'If': (node) => {return "If " + parseVariables(node.getAttribute2("Condition"))},
+        'WriteLine': (node) => {return "Write Line (" + parseVariables(node.getAttribute2("Text")) + ")"},
+        'Switch': (node) => {return "Switch (" + parseVariables(node.getAttribute2("Expression")) + ")"},
+        'AddToCollection': (node) => {return "Add " + parseVariables(node.getAttribute2("Item")) + " to " + parseVariables(node.getAttribute2("Collection")) + " collection"},
         'TryCatch': (node) => {return "Try"},
-        'Catch': (node) => {return "Catch " + parseVariables(node.getAttribute("x:TypeArguments"))},
-        'Throw': (node) => {return "Throw Exception " + parseVariables(node.getAttribute("Exception"))},
-        'Parallel': (node) => {return "Parallel execution" + (parseVariables(node.getChild("Parallel.CompletionCondition").getChild("mva:VisualBasicValue").getAttribute("ExpressionText"))?" - ends when " + parseVariables(node.getChild("Parallel.CompletionCondition").getChild("mva:VisualBasicValue").getAttribute("ExpressionText"))+" is true":"")},
-        'ui:MessageBox': (node) => {return "Display Message Box: " + parseVariables(node.getAttribute("Text"))},
-        'ui:LogMessage': (node) => {return "Log Message (" + parseVariables(node.getAttribute("Message")) + ")"},
-        'x:Property': (node) => {return parseVariables(node.getAttribute("Type")) + " " + parseVariables(node.getAttribute("Name"))},
+        'Catch': (node) => {return "Catch " + parseVariables(node.getAttribute2("x:TypeArguments"))},
+        'Throw': uip_Throw,
+        'Parallel': (node) => {return "Parallel execution" + (parseVariables(node.getChild("Parallel.CompletionCondition").getChild("mva:VisualBasicValue").getAttribute2("ExpressionText"))?" - ends when " + parseVariables(node.getChild("Parallel.CompletionCondition").getChild("mva:VisualBasicValue").getAttribute2("ExpressionText"))+" is true":"")},
+        'ui:MessageBox': (node) => {return "Display Message Box: " + parseVariables(node.getAttribute2("Text"))},
+        'ui:LogMessage': (node) => {return "Log Message (" + parseVariables(node.getAttribute2("Message")?node.getAttribute2("Message"):node.getChild("ui:LogMessage.Message").textContent) + ")"},
+        'x:Property': (node) => {return parseVariables(node.getAttribute2("Type")) + " " + parseVariables(node.getAttribute2("Name"))},
     }
 };
 
@@ -27,6 +35,7 @@ function attachToPage() {
 				var xamlContent = document.getElementsByClassName('type-xml')[0].innerText;
 				document.getElementsByClassName('type-xml')[0].innerHTML = '';
 				document.getElementsByClassName('type-xml')[0].id = 'canvas';
+                document.getElementById("canvas").classList.add(document.documentElement.getAttribute('data-color-mode'));
                 renderXAML(document.getElementById("canvas"), xamlContent);
 			}
 		}
@@ -118,7 +127,10 @@ function showElProperties(node, pp) {
     if (node.children && node.children.length) {
         for (var i=0;i<node.children.length;i++) 
         {
-            if (!node.children[i].getAttribute("sap2010:WorkflowViewState.IdRef") &&  !window.mappings[node.children[i].nodeName] && !node.children[i].getAttribute("DisplayName")) {
+            if (node.children[i].nodeName == 'CSharpReference' || node.children[i].nodeName == 'CSharpValue') {
+                pp.insertAdjacentHTML('beforeend', '<div><label>Value</label>: '+parseVariables(encodeHTML(node.textContent), false, true)+'</div>');
+                appended = true;
+            } else if (!node.children[i].getAttribute2("sap2010:WorkflowViewState.IdRef") &&  !window.mappings[node.children[i].nodeName] && !node.children[i].getAttribute2("DisplayName")) {
                 var spp = document.createElement('div');
                 spp.classList.add("subproperties");
                 if (showElProperties(node.children[i], spp)) {
@@ -278,9 +290,10 @@ function addNode(del, html) {
 
 function renderRec(del, node) {
     var k = node.nodeName;
+    if (k == 'CSharpValue' || k == 'CSharpReference') return false;
     var el = del;
     var added = false;
-    var xKey = node.getAttribute("x:Key");
+    var xKey = node.getAttribute2("x:Key");
     if (node.parentNode.nodeName == 'Switch' && (xKey || k == 'Switch.Default') && !node.caseProcessed) {
         if (xKey) {
             xKey = "Case " + parseVariables(xKey);
@@ -298,8 +311,8 @@ function renderRec(del, node) {
         return true;
     }
 
-    var DisplayName = node.getAttribute('DisplayName');
-    if (node.getAttribute("sap2010:WorkflowViewState.IdRef") || window.mappings[k] || node.getAttribute("DisplayName")) {
+    var DisplayName = node.getAttribute2('DisplayName');
+    if (node.getAttribute2("sap2010:WorkflowViewState.IdRef") || window.mappings[k] || node.getAttribute2("DisplayName")) {
         var html = '<div class="el" id="el'+(window.elIdx+1)+'">';
 
         if (!DisplayName) DisplayName = k.replace(/^.*:/, '');
@@ -307,7 +320,7 @@ function renderRec(del, node) {
         if (window.mappings[k]) {
             try {
                 if (k == 'uix:NApplicationCard') {
-                    if (!node.getChild("uix:NApplicationCard.TargetApp").getChild("uix:TargetApp").getAttribute("Url")) {
+                    if (!node.getChild("uix:NApplicationCard.TargetApp").getChild("uix:TargetApp").getAttribute2("Url")) {
                         k = 'uix:NApplicationCard_2';
                     }
                 }
@@ -333,7 +346,7 @@ function renderRec(del, node) {
         if (viewStates) viewStates = viewStates.children;
         if (viewStates && viewStates.length)
             for (var i=0;i<viewStates.length;i++) {
-                if (viewStates[i].getAttribute('x:Key') == 'IsExpanded') {
+                if (viewStates[i].getAttribute2('x:Key') == 'IsExpanded') {
                     if (viewStates[i].innerHTML == 'False') {
                         window.initiallyCollapsed.push(window.elIdx-1);
                     }

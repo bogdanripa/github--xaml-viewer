@@ -9,17 +9,18 @@ var xmlGetChild = function(childName) {
 }
 
 var xmlGetAttribute = function (attributeName) {
-    if (this.hasAttributes()) {
-        for (var i = 0; i < this.attributes.length; i++) {
-            if (this.attributes[i].name == attributeName) {
-                return this.attributes[i].value;
-            }
+    var aValue = this.getAttribute(attributeName);
+    if (!aValue) {
+        //console.error(this.nodeName + "." + attributeName);
+        var n = this.getChild(this.nodeName + "." + attributeName);
+        if (n) {
+            aValue = n.textContent;
         }
     }
-    return false;
+    return aValue;
 };
 
-Node.prototype.getAttribute = xmlGetAttribute;
+Node.prototype.getAttribute2 = xmlGetAttribute;
 Node.prototype.getChild = xmlGetChild;
 
 

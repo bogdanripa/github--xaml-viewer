@@ -1,0 +1,27 @@
+<html>
+	<head>
+		<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>-->
+		<script src="jquery.js"></script>
+		<script src="extension/system.js"></script>
+		<script src="extension/uia.js"></script>
+		<script src="extension/office.js"></script>
+		<script src="extension/contentScript.js"></script>
+		<script src="extension/xmlFunctions.js"></script>
+		<link rel="stylesheet" href="extension/myStyles.css" />
+	</head>
+	<body>
+		<div><div><div id="canvas" class="dark"></div></div></div>
+		<script>
+			var xmlhttp=new XMLHttpRequest();
+		    xmlhttp.onreadystatechange=function()
+		    {
+		        if (xmlhttp.readyState==4 && xmlhttp.status==200)
+		        {
+		        	renderXAML(document.getElementById("canvas"), xmlhttp.responseText);
+		        }
+		    }
+		    xmlhttp.open("GET", "Main.xaml", false );
+		    xmlhttp.send();
+		</script>
+	</body>
+</html>

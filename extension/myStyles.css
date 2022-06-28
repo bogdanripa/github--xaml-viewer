@@ -1,11 +1,19 @@
 @charset "utf-8";
-/* CSS Document */
+
+.ln {
+    position: absolute;
+    left: 2px;
+    width: 36px;
+    padding: 15px 10px;
+    text-align: right;
+    font-size: 17px;
+    cursor:pointer;
+    white-space: nowrap
+}
 
 #canvas {
     font-family: "Segoe UI";
     margin-left: 36px;
-    color: #555;
-
     font-size: 13px;
     max-width: 1000px;
 }
@@ -16,22 +24,23 @@
     padding: 5px;
     
 	box-shadow:inset 0px 1px 7px -1px #ffffff;
-	/*background:linear-gradient(to bottom, #f9f9f9 5%, #e9e9e9 100%);*/
 	background-color:#eee;
 	border-radius:4px;
 	border:1px solid #dcdcdc;
 	cursor:pointer;
-	color:#666666;
+	color:#666;
 	font-size:15px;
 	text-decoration:none;
-	text-shadow:0px 1px 29px #ffffff;
+	text-shadow:0px 1px 29px #fff;
     width: fit-content;
 }
 
-.el .l1 {
-    font-weight: bold;
-    padding-bottom: 2px;
-    margin-left: 5px;
+.dark .el {
+    background-color: #333;
+    border-color: #444;
+    color: #DDD;
+    box-shadow:inset 0px 1px 7px -1px #222;
+    text-shadow:0px 1px 29px #000;
 }
 
 .el .lbl {
@@ -47,14 +56,24 @@
 }
 
 .el.selected {
-    border: 1px solid black;
+    border: 1px solid #555;
+}
+
+.dark .el.selected {
+    border: 1px solid #AAA;
 }
 
 .scope {
 	padding: 0px;
     border-width: 0 0 0 7px;
-    background: none;
+    background-color: transparent;
     border-color: #d0d0d0;
+    box-shadow: inset 0px 1px 7px -1px transparent;
+}
+
+.dark .scope {
+    background-color: transparent;
+    box-shadow: inset 0px 1px 7px -1px transparent;
 }
 
 .scope.el.selected {
@@ -62,15 +81,23 @@
 }
 
 .scope.el.selected:after {
-    border: 1px solid black;
+    border: 1px solid #555;
     border-left: 0px;
     padding: 2px 13px 6px 7px;
 }
 
+.dark .scope.el.selected:after {
+    border-color: #AAA;
+}
+
 .scope.el.selected>.lbl {
-    border: 1px solid black;
+    border: 1px solid #555;
     border-left: 0;
     padding: 6px 13px 6px 7px;
+}
+
+.dark .scope.el.selected>.lbl {
+    border-color: #AAA;
 }
 
 .var {
@@ -86,16 +113,8 @@
     vertical-align: top;
 }
 
-.ln {
-    position: absolute;
-    left: 2px;
-    width: 36px;
-    padding: 15px 10px;
-    text-align: right;
-    color: #AAA;
-    font-size: 17px;
-    cursor:pointer;
-    white-space: nowrap
+.dark .var {
+    background-color: rgba(0, 0, 0, 0.7);
 }
 
 .csign
@@ -113,8 +132,8 @@
 .scope:after
 {
     content: "end";
-    margin: 5px 5px 5px 0;
-    padding: 3px 14px 7px 7px;
+    margin: 5px 5px 5px -1px;
+    padding: 3px 14px 7px 8px;
     width: fit-content;
     height: 15px;
     display: block;
@@ -123,50 +142,24 @@
     background-color: #d0d0d0;
 }
 
+.dark .scope:after
+{
+    background-color: #444;
+}
+
 .scope > .lbl
 {
-    margin-left: 0px;
-    padding: 7px 14px 7px 7px;
+    margin-left: -1px;
+    padding: 7px 14px 7px 8px;
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
     width: fit-content;
     background-color: #d0d0d0;
 }
 
-.ueab-ExcelForEachRow {
-    border-color: #c7e5f5;
-}
-
-.ueab-ExcelApplicationCard
+.dark .scope > .lbl
 {
-    border-color: #bcd8d5;
-}
-
-.uix-NApplicationCard, .uix-NApplicationCard-2 {
-    border-color: #ecdba9;
-}
-
-
-.ueab-ExcelApplicationCard > .lbl,
-.ueab-ExcelApplicationCard:after
-{
-    background-color: #bcd8d5;
-}
-
-.uix-NApplicationCard > .lbl,
-.uix-NApplicationCard:after,
-.uix-NApplicationCard-2 > .lbl,
-.uix-NApplicationCard-2:after,
-.uix-NTypeInto,
-.uix-NClick
-{
-    background-color: #ecdba9;
-}
-
-.ueab-ExcelForEachRow > .lbl,
-.ueab-ExcelForEachRow:after
-{
-	background-color: #c7e5f5;
+    background-color: #444;
 }
 
 .ui-CommentOut {
@@ -204,6 +197,13 @@
     border-radius: 5px;
     min-width: 250px;
     display: none;
+    color: #222;
+}
+
+.dark #xamlNodeProperties {
+    background-color: #333;
+    border-color: #444;
+    color: #DDD;
 }
 
 #xamlNodeProperties .var {

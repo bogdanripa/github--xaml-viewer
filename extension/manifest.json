@@ -1,7 +1,7 @@
 {
   "name": "UiPath XAML support in GitHub",
-  "version": "1.0",
-  "description": "Adds support for viewing and diff'ing XAML files in GitHub",
+  "version": "1.0.1",
+  "description": "Adds support for viewing XAML files in GitHub",
   "manifest_version": 3,
   "content_scripts": [
     {
