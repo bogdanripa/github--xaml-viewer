@@ -1,6 +1,8 @@
 # Github Xaml Viewer
 
-This can be loaded in Chrome as a chrome extension. Once loaded, when viewing a UiPath xaml file in github, the default XML viewer will  be replaced with another viewer that provides a more human-readable experience
+This can be loaded in Chrome as a chrome extension. Once loaded, when viewing a UiPath xaml file in github, the default XML viewer will  be replaced with another viewer that provides a more human-readable experience.
+
+Video demo: https://youtu.be/FYBM66o2sGI
 
 Features:
 * line numbers
