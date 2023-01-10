@@ -288,8 +288,35 @@ function addNode(del, html) {
     return el;
 }
 
+function rearrangeStateMachine(node) {
+    var states = node.getElementsByTagName("State");
+    var statesRefs = {};
+    for (var i=0;i<states.length;i++) {
+        statesRefs[states[i].getAttribute('x:Name')] = states[i].getAttribute('DisplayName');
+        if (states[i].parentNode != node) {
+            states[i].parentNode.setAttribute('DisplayName', states[i].getAttribute('DisplayName'));
+            node.appendChild(states[i]);
+        }
+    }
+
+    var transitionsTo = node.getElementsByTagName("Transition.To");
+    for (var i=0;i<transitionsTo.length;i++) {
+        var xr = transitionsTo[i].getChild('x:Reference');
+        var tn = transitionsTo[i].getAttribute('DisplayName');
+        if (xr) {
+            tn = statesRefs[xr.innerHTML];
+        }
+        transitionsTo[i].setAttribute('DisplayName', tn);
+    }
+
+    return node;
+}
+
 function renderRec(del, node) {
     var k = node.nodeName;
+    if (k == 'StateMachine') {
+        node = rearrangeStateMachine(node, node);
+    }
     if (k == 'CSharpValue' || k == 'CSharpReference') return false;
     var el = del;
     var added = false;
