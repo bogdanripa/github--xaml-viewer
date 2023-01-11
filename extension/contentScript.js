@@ -13,7 +13,6 @@ window.mappings = {
     ... {
         'x:Members': (node) => {return "Worflow arguments"},
         'x:Property': (node) => {return parseVariables(node.getAttribute2("Type")) + " " + parseVariables(node.getAttribute2("Name"))},
-        'StateMachine.Variables': (node) => {return "Variables"},
         'Sequence.Variables': (node) => {return "Variables"},
         'Flowchart.Variables': (node) => {return "Variables"},
         'Variable': (node) => {return "var " + parseVariables(node.getAttribute2("x:TypeArguments")) + " " + parseVariables(node.getAttribute2("Name")) + (node.getAttribute2("Default")?(" = " + parseVariables(node.getAttribute2("Default"))):"")},
@@ -361,6 +360,12 @@ function rearrangeStateMachine(node) {
         }
         transitionsTo[i].setAttribute('DisplayName', tn);
     }
+
+    var initialState = node.getAttribute('InitialState');
+    initialState = initialState.replace(/{x:reference\s+([^}]*)}/i, '$1');
+    initialState = statesRefs[initialState];
+    node.setAttribute('InitialState', initialState);
+
     return node;
 }
 
