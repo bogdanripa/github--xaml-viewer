@@ -11,10 +11,21 @@ function uip_Throw(node) {
 window.mappings = {
     ... window.mappings,
     ... {
+        'x:Members': (node) => {return "Worflow arguments"},
+        'x:Property': (node) => {return parseVariables(node.getAttribute2("Type")) + " " + parseVariables(node.getAttribute2("Name"))},
+        'StateMachine.Variables': (node) => {return "Variables"},
+        'Sequence.Variables': (node) => {return "Variables"},
+        'Flowchart.Variables': (node) => {return "Variables"},
         'Variable': (node) => {return "var " + parseVariables(node.getAttribute2("x:TypeArguments")) + " " + parseVariables(node.getAttribute2("Name")) + (node.getAttribute2("Default")?(" = " + parseVariables(node.getAttribute2("Default"))):"")},
+        'Flowchart': (node) => {return "Flowchart " + parseVariables(node.getAttribute2("DisplayName")) + " ("+ parseVariables(node.getChild('Flowchart.StartNode').children[0].innerHTML) +")"},
+        'FlowStep':  (node) => {return "Flow step " + parseVariables(node.getAttribute2("x:Name"))},
         'Assign': (node) => {return parseVariables(node.getChild("Assign.To").getChild("OutArgument").textContent) + " = " + parseVariables(node.getChild("Assign.Value").getChild("InArgument").textContent)},
         'ui:AssignOperation': (node) => {return parseVariables(node.getChild("ui:AssignOperation.To").textContent) + " = " + parseVariables(node.getChild("ui:AssignOperation.Value").textContent);},
         'If': (node) => {return "If " + parseVariables(node.getAttribute2("Condition"))},
+        'FlowDecision': (node) => {return "If " + parseVariables(node.getChild("FlowDecision.Condition").children[0].getAttribute2("ExpressionText"))},
+        'FlowDecision.True': (node) => {return "Then"},
+        'FlowDecision.False': (node) => {return "Else"},
+        'FlowStep.Next': (node) => {return "Go To " + parseVariables(node.children[0].innerHTML)},
         'WriteLine': (node) => {return "Write Line (" + parseVariables(node.getAttribute2("Text")) + ")"},
         'Switch': (node) => {return "Switch (" + parseVariables(node.getAttribute2("Expression")) + ")"},
         'AddToCollection': (node) => {return "Add " + parseVariables(node.getAttribute2("Item")) + " to " + parseVariables(node.getAttribute2("Collection")) + " collection"},
@@ -24,7 +35,6 @@ window.mappings = {
         'Parallel': (node) => {return "Parallel execution" + (parseVariables(node.getChild("Parallel.CompletionCondition").getChild("mva:VisualBasicValue").getAttribute2("ExpressionText"))?" - ends when " + parseVariables(node.getChild("Parallel.CompletionCondition").getChild("mva:VisualBasicValue").getAttribute2("ExpressionText"))+" is true":"")},
         'ui:MessageBox': (node) => {return "Display Message Box: " + parseVariables(node.getAttribute2("Text"))},
         'ui:LogMessage': (node) => {return "Log Message (" + parseVariables(node.getAttribute2("Message")?node.getAttribute2("Message"):node.getChild("ui:LogMessage.Message").textContent) + ")"},
-        'x:Property': (node) => {return parseVariables(node.getAttribute2("Type")) + " " + parseVariables(node.getAttribute2("Name"))},
     }
 };
 
@@ -249,11 +259,12 @@ function renderXAML(el, xamlContent) {
     window.initiallyCollapsed = [];
 
     var parser = new DOMParser();
-    xmlDoc = parser.parseFromString(xamlContent, 'application/xml');
+    window.xmlDoc = parser.parseFromString(xamlContent, 'application/xml');
 
-    xmlInit(xmlDoc.firstChild);
+    xmlInit(window.xmlDoc.firstChild);
     el.insertAdjacentHTML('beforeend', '<div id="xamlNodeProperties"></div>')
-    renderRec(el, xmlDoc.firstChild);
+    var node = moveVaiablesAndAtgumentsToTheTop(window.xmlDoc.firstChild);
+    renderRec(el, node);
     for(var i=window.initiallyCollapsed.length-1;i>=0;i--) {
         toggleScope(null, document.getElementById('el' + window.initiallyCollapsed[i]));
     }
@@ -288,25 +299,77 @@ function addNode(del, html) {
     return el;
 }
 
+function rearrangeFlowchart(node) {
+
+    var flowNextSteps = node.getElementsByTagName("FlowStep.Next");
+    Array.from(flowNextSteps).forEach((flowNextStep) => {
+        var xr = flowNextStep.getChild('x:Reference');
+        if (!xr) {
+            // new step detected
+            var childContents = flowNextStep.children[0];
+            if (childContents.nodeName != 'FlowStep') {
+
+                var newStep = window.xmlDoc.createElement("FlowStep");
+                newStep.setAttribute('x:Name', childContents.getAttribute('x:Name'));
+                newStep.appendChild(childContents);
+                node.appendChild(newStep);
+
+                xr = window.xmlDoc.createElement("x:Reference");
+                xr.innerHTML = childContents.getAttribute('x:Name');
+
+                flowNextStep.appendChild(xr);
+            }
+        }
+    });
+
+    var flowSteps = node.getElementsByTagName("FlowStep");
+    Array.from(flowSteps).forEach((flowStep) => {
+        if (flowStep.parentNode != node) {
+            var xr = window.xmlDoc.createElement("x:Reference");
+            xr.innerHTML = flowStep.getAttribute('x:Name');
+
+            if (flowStep.parentNode.nodeName =='FlowStep.Next') {
+                flowStep.parentNode.insertBefore(xr, flowStep);
+            } else {
+                var nextStep = window.xmlDoc.createElement("FlowStep.Next");
+                nextStep.appendChild(xr);
+                flowStep.parentNode.insertBefore(nextStep, flowStep);
+            }
+            node.appendChild(flowStep);
+        }
+    });
+    return node;
+}
+
 function rearrangeStateMachine(node) {
+    // state machine
     var states = node.getElementsByTagName("State");
     var statesRefs = {};
-    for (var i=0;i<states.length;i++) {
+    for (var i=states.length-1;i>=0;i--) {
         statesRefs[states[i].getAttribute('x:Name')] = states[i].getAttribute('DisplayName');
         if (states[i].parentNode != node) {
             states[i].parentNode.setAttribute('DisplayName', states[i].getAttribute('DisplayName'));
             node.appendChild(states[i]);
         }
     }
-
     var transitionsTo = node.getElementsByTagName("Transition.To");
-    for (var i=0;i<transitionsTo.length;i++) {
+    for (var i=transitionsTo.length-1;i>=0;i--) {
         var xr = transitionsTo[i].getChild('x:Reference');
         var tn = transitionsTo[i].getAttribute('DisplayName');
         if (xr) {
             tn = statesRefs[xr.innerHTML];
         }
         transitionsTo[i].setAttribute('DisplayName', tn);
+    }
+    return node;
+}
+
+function moveVaiablesAndAtgumentsToTheTop(node) {
+    for (var varNodeName of ["Sequence.Variables", "StateMachine.Variables", "Flowchart.Variables", "x:Members"]) {
+        var variables = node.getElementsByTagName(varNodeName);
+        for (var i=variables.length-1;i>=0;i--) {
+            variables[i].parentNode.prepend(variables[i]);
+        }
     }
 
     return node;
@@ -315,8 +378,13 @@ function rearrangeStateMachine(node) {
 function renderRec(del, node) {
     var k = node.nodeName;
     if (k == 'StateMachine') {
-        node = rearrangeStateMachine(node, node);
+        node = rearrangeStateMachine(node);
     }
+
+    if (k == 'Flowchart') {
+        node = rearrangeFlowchart(node);
+    }
+
     if (k == 'CSharpValue' || k == 'CSharpReference') return false;
     var el = del;
     var added = false;
