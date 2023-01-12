@@ -35,12 +35,20 @@
     width: fit-content;
 }
 
+.el:nth-child(odd) {
+    background-color:#e2e2e2;
+}
+
 .dark .el {
     background-color: #333;
     border-color: #444;
     color: #DDD;
     box-shadow:inset 0px 1px 7px -1px #222;
     text-shadow:0px 1px 29px #000;
+}
+
+.dark .el:nth-child(odd) {
+    background-color:#444;
 }
 
 .el .lbl {
@@ -66,13 +74,12 @@
 .scope {
 	padding: 0px;
     border-width: 0 0 0 7px;
-    background-color: transparent;
+    background-color: transparent !important;
     border-color: #d0d0d0;
     box-shadow: inset 0px 1px 7px -1px transparent;
 }
 
 .dark .scope {
-    background-color: transparent;
     box-shadow: inset 0px 1px 7px -1px transparent;
 }
 
@@ -162,7 +169,7 @@
     background-color: #444;
 }
 
-.ui-CommentOut {
+.uipath-ui-CommentOut {
     opacity: 0.5;
 }
 

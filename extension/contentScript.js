@@ -439,7 +439,7 @@ function renderRec(del, node) {
         
         el = addNode(del, html);
         window.nodeMap[window.elIdx-1] = node;
-        el.classList.add(k.replace(/[^a-z0-9]/ig, '-'));
+        el.classList.add("uipath-" + k.replace(/[^a-z0-9]/ig, '-'));
     
         var viewStates = node.getChild("sap:WorkflowViewStateService.ViewState");
         if (viewStates) viewStates = viewStates.getChild("scg:Dictionary");
