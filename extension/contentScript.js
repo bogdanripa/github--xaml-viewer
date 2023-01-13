@@ -344,27 +344,73 @@ function rearrangeStateMachine(node) {
     // state machine
     var states = node.getElementsByTagName("State");
     var statesRefs = {};
-    for (var i=states.length-1;i>=0;i--) {
-        statesRefs[states[i].getAttribute('x:Name')] = states[i].getAttribute('DisplayName');
-        if (states[i].parentNode != node) {
-            states[i].parentNode.setAttribute('DisplayName', states[i].getAttribute('DisplayName'));
-            node.appendChild(states[i]);
-        }
-    }
-    var transitionsTo = node.getElementsByTagName("Transition.To");
-    for (var i=transitionsTo.length-1;i>=0;i--) {
-        var xr = transitionsTo[i].getChild('x:Reference');
-        var tn = transitionsTo[i].getAttribute('DisplayName');
-        if (xr) {
-            tn = statesRefs[xr.innerHTML];
-        }
-        transitionsTo[i].setAttribute('DisplayName', tn);
+
+    for (var i=0;i<states.length;i++) {
+        statesRefs[states[i].getAttribute('x:Name')] = {name: states[i].getAttribute('DisplayName'), tos:[], state: states[i]};
     }
 
+    // move up
+    for (var sr in statesRefs) {
+        var state = statesRefs[sr].state;
+        if (state.parentNode != node) {
+            state.parentNode.setAttribute('DisplayName', state.getAttribute('DisplayName'));
+            state.parentNode.setAttribute('x:tr', state.getAttribute('x:Name'));
+            node.appendChild(state);
+        }
+    }
+
+    // update initial state display
     var initialState = node.getAttribute('InitialState');
     initialState = initialState.replace(/{x:reference\s+([^}]*)}/i, '$1');
-    initialState = statesRefs[initialState];
-    node.setAttribute('InitialState', initialState);
+    node.setAttribute('InitialState', statesRefs[initialState].name);
+
+    // update transitions
+    for (var sr in statesRefs) {
+        var state = statesRefs[sr].state;
+        transitionsTo = state.getElementsByTagName("Transition.To");
+        for (var j=0;j<transitionsTo.length;j++) {
+            var xr = transitionsTo[j].getChild('x:Reference');
+            var tn = transitionsTo[j].getAttribute('DisplayName');
+            var tr;
+            if (xr) {
+                tn = statesRefs[xr.innerHTML].name;
+                tr = xr.innerHTML;
+            } else {
+                tr = transitionsTo[j].getAttribute('x:tr');
+            }
+            transitionsTo[j].setAttribute('DisplayName', tn);
+            statesRefs[sr].tos.push(tr);
+        }
+    }
+
+    // reorder states
+    var orderedStates = [initialState];
+    statesRefs[initialState].processed = true;
+    var currentStep = 0;
+    while(true) {
+        var cs = statesRefs[orderedStates[currentStep]];
+        if (cs) {
+            for (var i=0;i<cs.tos.length;i++) {
+                if (statesRefs[cs.tos[i]].processed || statesRefs[cs.tos[i]].tos.length == 0) continue;
+                orderedStates.push(cs.tos[i]);
+                statesRefs[cs.tos[i]].processed = true;
+            }
+            currentStep++;
+        } else {
+            break;
+        }
+    }
+    // add the final nodes
+    for (var sr in statesRefs) {
+        if (!statesRefs[sr].processed) {
+            statesRefs[sr].processed = true;
+            orderedStates.push(sr);
+        }
+    }
+
+    for (var i=0;i<orderedStates.length;i++) {
+        node.appendChild(statesRefs[orderedStates[i]].state);
+    }
 
     return node;
 }
