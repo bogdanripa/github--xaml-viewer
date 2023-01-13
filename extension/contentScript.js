@@ -321,11 +321,13 @@ function rearrangeFlowchart(node) {
         }
     });
 
+    var stepRefs = {};
     var flowSteps = node.getElementsByTagName("FlowStep");
     Array.from(flowSteps).forEach((flowStep) => {
+        var stepName = flowStep.getAttribute('x:Name');
         if (flowStep.parentNode != node) {
             var xr = window.xmlDoc.createElement("x:Reference");
-            xr.innerHTML = flowStep.getAttribute('x:Name');
+            xr.innerHTML = stepName;
 
             if (flowStep.parentNode.nodeName =='FlowStep.Next') {
                 flowStep.parentNode.insertBefore(xr, flowStep);
@@ -336,7 +338,49 @@ function rearrangeFlowchart(node) {
             }
             node.appendChild(flowStep);
         }
+        stepRefs[stepName] = {step: flowStep, tos: []};
     });
+
+    // get all transitions
+    for (var sr in stepRefs) {
+        var step = stepRefs[sr].step;
+        transitionsTo = step.getElementsByTagName("FlowStep.Next");
+        for (var j=0;j<transitionsTo.length;j++) {
+            var tr = transitionsTo[j].getChild('x:Reference').innerHTML;
+            stepRefs[sr].tos.push(tr);
+        }
+    }
+
+    // reorder steps
+    var initialStep = node.getChild('Flowchart.StartNode').children[0].innerHTML;
+    var orderedSteps = [initialStep];
+    stepRefs[initialStep].processed = true;
+    var currentStep = 0;
+    while(true) {
+        var cs = stepRefs[orderedSteps[currentStep]];
+        if (cs) {
+            for (var i=0;i<cs.tos.length;i++) {
+                if (stepRefs[cs.tos[i]].processed || stepRefs[cs.tos[i]].tos.length == 0) continue;
+                orderedSteps.push(cs.tos[i]);
+                stepRefs[cs.tos[i]].processed = true;
+            }
+            currentStep++;
+        } else {
+            break;
+        }
+    }
+    // add the final nodes
+    for (var sr in stepRefs) {
+        if (!stepRefs[sr].processed) {
+            stepRefs[sr].processed = true;
+            orderedSteps.push(sr);
+        }
+    }
+
+    for (var i=0;i<orderedSteps.length;i++) {
+        node.appendChild(stepRefs[orderedSteps[i]].step);
+    }
+
     return node;
 }
 
